@@ -1,7 +1,9 @@
 # coding=utf-8
 import math
 
+import matplotlib.pyplot as plt
 import statsmodels.tsa.stattools as ts
+from scipy.stats import linregress
 
 import web_data
 
@@ -33,5 +35,31 @@ def find_best_pairs(raws, top=100):
 			out.append((cointegration(raws[stocks[i]], raws[stocks[j]]), stocks[i], stocks[j]))
 	return out
 
-x = find_best_pairs(gen_log_raws(web_data.load_stocks()))
-y = find_best_pairs(web_data.load_stocks())
+
+def plot_pairs(s1, s2):
+	fig, ax = plt.subplots()
+	seq1, seq2 = web_data.load_stocks()[s1], web_data.load_stocks()[s2]
+	seq1, seq2 = seq1[-len(seq2):], seq2[-len(seq1):]
+
+	slope, intercept, rvalue, pvalue, stderr = linregress(seq1, seq2)
+
+	ax.plot(seq1)
+	ax.plot(seq2)
+	ax.plot([j - slope * i - intercept for i, j in zip(seq1, seq2)])
+
+
+if __name__ == "main":
+	# x = find_best_pairs(gen_log_raws(web_data.load_stocks()))
+	y = find_best_pairs(web_data.load_stocks())
+
+	count = 0
+	for coeff, s1, s2 in sorted(y)[:50]:
+		seq1, seq2 = web_data.load_stocks()[s1], web_data.load_stocks()[s2]
+		seq1, seq2 = seq1[-len(seq2):], seq2[-len(seq1):]
+
+		if 0.2 < linregress(seq1, seq2).slope < 5:
+			print(coeff, s1, s2)
+			plot_pairs(s1, s2)
+			count += 1
+		if count > 10:
+			break

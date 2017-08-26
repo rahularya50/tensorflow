@@ -79,9 +79,10 @@ def get_market_caps():
 	return caps
 
 
-def load_stocks():
-	raws = {}
+def load_stocks(cache={}):
+	if cache:
+		return cache
 	for i in range(100, 3300, 100):
 		with open("raws/raw_{}.pickle".format(i), "rb") as file:
-			raws.update(pickle.load(file))
-	return raws
+			cache.update(pickle.load(file))
+	return cache
