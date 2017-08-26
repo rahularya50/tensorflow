@@ -7,6 +7,9 @@ from scipy.stats import linregress
 
 import web_data
 
+LOG_SPREAD = False
+BLOCK_SIZE = 200
+
 
 def gen_log_raws(raws):
 	out = {}
@@ -37,29 +40,95 @@ def find_best_pairs(raws, top=100):
 
 
 def plot_pairs(s1, s2):
-	fig, ax = plt.subplots()
 	seq1, seq2 = web_data.load_stocks()[s1], web_data.load_stocks()[s2]
 	seq1, seq2 = seq1[-len(seq2):], seq2[-len(seq1):]
 
 	slope, intercept, rvalue, pvalue, stderr = linregress(seq1, seq2)
 
+	fig, ax = plt.subplots()
 	ax.plot(seq1)
 	ax.plot(seq2)
 	ax.plot([j - slope * i - intercept for i, j in zip(seq1, seq2)])
 
 
-if __name__ == "main":
-	# x = find_best_pairs(gen_log_raws(web_data.load_stocks()))
-	y = find_best_pairs(web_data.load_stocks())
+def make_spreads(*, train):
+	pairs = []
+	spreads = []
+	with open("target_pairs.csv") as file:
+		for line in file:
+			pairs.append(line.split())
+
+	for s1, s2 in pairs:
+		seq1, seq2 = web_data.load_stocks()[s1], web_data.load_stocks()[s2]
+		seq1, seq2 = seq1[-len(seq2):], seq2[-len(seq1):]
+
+		if LOG_SPREAD:
+			seq1, seq2 = ([math.log(i) for i in seq if i != 0] for seq in (seq1, seq2))
+
+		temp = blockify_spread((seq1, seq2))
+
+		if train:
+			temp = temp[:-math.ceil(len(temp) / 5)]
+		else:
+			temp = temp[-math.ceil(len(temp) / 5):]
+
+		spreads.append(temp)
+
+	return spreads
+
+
+def blockify_spread(raw_spreads):
+	spread = []
+	for i in range(len(raw_spreads[0]) // BLOCK_SIZE - 1):
+		prev_seq = [raw_spread[i*BLOCK_SIZE: (i+1)*BLOCK_SIZE] for raw_spread in raw_spreads]
+		next_seq = [raw_spread[(i+1)*BLOCK_SIZE: (i+2)*BLOCK_SIZE] for raw_spread in raw_spreads]
+		slope, intercept, rvalue, pvalue, stderr = linregress(prev_seq)
+		print(slope, intercept)
+		spread.append([j - slope*i - intercept for i, j in zip(*next_seq)])
+	return spread
+
+
+def plot_spread(i):
+	pairs = []
+	with open("target_pairs.csv") as file:
+		for line in file:
+			pairs.append(line.split())
+
+	s1, s2 = pairs[i]
+	seq1, seq2 = web_data.load_stocks()[s1], web_data.load_stocks()[s2]
+	seq1, seq2 = seq1[-len(seq2):], seq2[-len(seq1):]
+
+	if LOG_SPREAD:
+		seq1, seq2 = ([math.log(i) for i in seq if i != 0] for seq in (seq1, seq2))
+
+	spread = sum(make_spreads(train=True)[i] + make_spreads(train=False)[i], [])
+
+	print(s1, s2, spread)
+
+	fig, ax = plt.subplots()
+	ax.plot(seq1)
+	ax.plot(seq2)
+	ax.plot(spread)
+
+
+def gen_best_pairs():
+	if LOG_SPREAD:
+		pair_cointegrations = find_best_pairs(gen_log_raws(web_data.load_stocks()))
+	else:
+		pair_cointegrations = find_best_pairs(web_data.load_stocks())
 
 	count = 0
-	for coeff, s1, s2 in sorted(y)[:50]:
+	for coeff, s1, s2 in sorted(pair_cointegrations)[:50]:
 		seq1, seq2 = web_data.load_stocks()[s1], web_data.load_stocks()[s2]
 		seq1, seq2 = seq1[-len(seq2):], seq2[-len(seq1):]
 
 		if 0.2 < linregress(seq1, seq2).slope < 5:
-			print(coeff, s1, s2)
+			print(s1, s2)
 			plot_pairs(s1, s2)
 			count += 1
 		if count > 10:
 			break
+
+
+if __name__ == "main":
+	pass

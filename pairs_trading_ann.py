@@ -7,7 +7,7 @@ from keras.utils.np_utils import to_categorical
 
 from dummy_data import MEAN, DECAY, gen_sim_data, STDEV
 from pairs_trading import DELAY
-from web_data import gen_spread
+from process_data import make_spreads
 
 N = 50000
 LEN_HISTORY = 10
@@ -18,7 +18,7 @@ def create_data_pairs(size, src):
 	y = []
 	for i in range(2, len(src)-size-DELAY):
 		x.append(src[i:i+size])
-		y.append(to_categorical(int(src[i + size + DELAY] > src[i + size + DELAY - 1]), num_classes = 2))
+		y.append(to_categorical(int(src[i + size + DELAY] > src[i + size + DELAY - 1]), num_classes=2))
 	return x, y
 
 
@@ -32,12 +32,12 @@ def get_network():
 	return model
 
 
-def train(src=None):
-	if src is None:
-		src = [gen_sim_data(N + LEN_HISTORY + DELAY + 5, MEAN, DECAY, STDEV)]
+def train(train=None):
+	if train is None:
+		train = [gen_sim_data(N + LEN_HISTORY + DELAY + 5, MEAN, DECAY, STDEV)]
 
 	x, y = [], []
-	for batch in src:
+	for batch in train:
 		batch_x, batch_y = create_data_pairs(LEN_HISTORY, batch)
 		x += batch_x
 		y += batch_y
@@ -75,4 +75,4 @@ def gen_predictors(i=0.8):
 if __name__ == '__main__':
 	# train([gen_sim_data(10000, MEAN, DECAY, STDEV)])
 	# print(gen_spread("MSFT", "GOOG", train=True))
-	train(gen_spread("MSFT", "GOOG", train=True))
+	train(make_spreads(train=True)[1])

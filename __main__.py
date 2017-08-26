@@ -1,22 +1,16 @@
 # coding=utf-8
 
-import numpy as np
-
 import benchmark
 # import pairs_trading_lstm
-import pairs_trading_deepq
+import pairs_trading_ann
 from pairs_trading import *
-from web_data import *
-
-
-from dummy_data import *
+from process_data import make_spreads
 
 # import pairs_trading_ann
 
-print(len(gen_spread("MSFT", "GOOG")))
-
 # spread = [gen_sim_data(DURATION, MEAN, DECAY, STDEV)]
-spread = gen_spread("MSFT", "GOOG", train=False)
+spread = make_spreads(train=False)[1]
+print(len(spread), len(spread[0]))
 
 # for i in np.arange(0.0, 2.0, 0.2):
 # 	for j in np.arange(0.0, 2.0, 0.2):
@@ -24,7 +18,7 @@ spread = gen_spread("MSFT", "GOOG", train=False)
 # 		      spread, show_fig=True, log_out=False))
 
 trial([benchmark.gen_predictors(avg=0, threshold_min=1, threshold_max=0)]
-      + [pairs_trading_deepq.gen_predictors("ann2", version=7)]
+      + [pairs_trading_ann.gen_predictors()]
       ,
       spread, show_fig=True)
 

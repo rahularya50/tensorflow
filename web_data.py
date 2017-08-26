@@ -2,15 +2,17 @@
 
 import datetime as dt
 import pickle
+import warnings
 
 import pandas
 import pandas_datareader.data as web
 from scipy.stats import linregress
 
-BLOCK_SIZE = 100
+BLOCK_SIZE = 500  # OLD VERSION DO NOT USE!!!
 
 
 def gen_spread(*stocks, train=False):
+	warnings.warn('Use make_spreads instead.', DeprecationWarning)
 	start = dt.datetime(2008, 7, 26)
 	end = dt.datetime(2017, 7, 26)
 

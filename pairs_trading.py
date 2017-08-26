@@ -7,7 +7,8 @@ DELAY = 1
 
 def get_profits(data, should_buy, should_sell, prev_profit=0):
 	profits = [prev_profit]
-	draw_down = [prev_profit]
+	net_value = [prev_profit]
+	will_be_active = False
 	active = False
 	todo = []
 	history = []
@@ -17,18 +18,21 @@ def get_profits(data, should_buy, should_sell, prev_profit=0):
 		if todo:
 			if todo[0][0] == index:
 				act = todo.pop(0)[1]
+				active += act
 		profits.append(profits[-1] - dat * act)
-		draw_down.append(profits[-1] + active * dat)
-		if active and should_sell(history):
+		net_value.append(profits[-1] + active * dat)
+
+		if will_be_active and should_sell(history):
 			todo.append((index + DELAY, -1))
-			active = False
-		elif not active and should_buy(history):
+			will_be_active = False
+		elif not will_be_active and should_buy(history):
 			todo.append((index + DELAY, 1))
-			active = True
-	if active:
-		profits += [profits[-1] + data[-1]]
-		draw_down.append(profits[-1])
-	return draw_down
+			will_be_active = True
+
+	if will_be_active:
+		profits.append(profits[-1] + data[-1])
+		# net_value.append(profits[-1])
+	return net_value
 
 
 def trial(models, spreads, show_fig=True, log_out=True):
