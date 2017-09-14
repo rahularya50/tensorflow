@@ -1,25 +1,26 @@
 # coding=utf-8
 
-THRESHOLD = 2
+import numpy
+
+THRESHOLD = 1.5
+LEN_HISTORY = 20
 
 
-def benchmark_buy(history, threshold, avg=None):
-	if avg is None and len(history) < 20:
+def benchmark_buy(history, threshold):
+	if len(history) < LEN_HISTORY:
 		return False
-	if avg is None:
-		avg = sum(history[:20]) / 20
-	return history[-1] < avg - threshold
+	stdev = numpy.std(history[-LEN_HISTORY:])
+	return history[-1] < - threshold * stdev
 
 
-def benchmark_sell(history, threshold, avg=None):
-	if avg is None and len(history) < 20:
+def benchmark_sell(history, threshold):
+	if len(history) < LEN_HISTORY:
 		return False
-	if avg is None:
-		avg = sum(history[:20]) / 20
-	return history[-1] > avg + threshold
+	stdev = numpy.std(history[-LEN_HISTORY:])
+	return history[-1] > threshold * stdev
 
 
-def gen_predictors(avg=None, threshold_min=THRESHOLD, threshold_max=THRESHOLD):
-	return lambda history: benchmark_buy(history, threshold_min, avg),\
-	       lambda history: benchmark_sell(history, threshold_max, avg),\
+def gen_predictors(threshold_min=THRESHOLD, threshold_max=THRESHOLD):
+	return lambda history: benchmark_buy(history, threshold_min),\
+	       lambda history: benchmark_sell(history, threshold_max),\
 	       "benchmark"

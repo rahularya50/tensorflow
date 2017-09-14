@@ -6,6 +6,7 @@ import warnings
 
 import pandas
 import pandas_datareader.data as web
+from pandas_datareader._utils import RemoteDataError
 from scipy.stats import linregress
 
 BLOCK_SIZE = 500  # OLD VERSION DO NOT USE!!!
@@ -88,3 +89,31 @@ def load_stocks(cache={}):
 		with open("raws/raw_{}.pickle".format(i), "rb") as file:
 			cache.update(pickle.load(file))
 	return cache
+
+
+def download_etfs():
+	etfs = {}
+	with open("etfs.csv") as file:
+		for etf in file.readlines():
+			etf = etf.strip()
+			print(etf, end=" ")
+			while True:
+				try:
+					etfs[etf] = web.DataReader(etf, "yahoo", dt.datetime(2000, 7, 26), dt.datetime(2017, 7, 26))
+				except RemoteDataError:
+					print("err", end=" ")
+				else:
+					print("success")
+					break
+
+	with open("etfs.pickle", "wb") as file:
+		pickle.dump(etfs, file)
+
+
+def load_etfs():
+	with open("etfs.pickle", "rb") as file:
+		raws = pickle.load(file)
+	out = pandas.DataFrame({"Date": []})
+	for etf in raws:
+		out = out.join(raws[etf], how="outer", rsuffix="_{}".format(etf))
+	return out

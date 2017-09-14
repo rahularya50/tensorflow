@@ -10,7 +10,7 @@ from pairs_trading import DELAY
 from process_data import make_spreads
 
 N = 50000
-LEN_HISTORY = 10
+LEN_HISTORY = 50
 
 
 def create_data_pairs(size, src):
@@ -75,4 +75,4 @@ def gen_predictors(i=0.8):
 if __name__ == '__main__':
 	# train([gen_sim_data(10000, MEAN, DECAY, STDEV)])
 	# print(gen_spread("MSFT", "GOOG", train=True))
-	train(make_spreads(train=True)[1])
+	train(make_spreads(train=True)[6])
